@@ -48,6 +48,7 @@ function create(randomFn) {
     pendingLane: null,
     turbo: false,
     boost: MAX_BOOST,
+    boostDepleted: false,
     score: 0,
     carsPassed: 0,
     level: 1,
@@ -81,17 +82,28 @@ function steer(state, targetLane) {
 function setTurbo(state, active) {
   var isTurbo = active === true
 
-  // Cannot activate boost if tank is empty
-  if (isTurbo && state.boost <= 0) {
-    isTurbo = false
+  if (!isTurbo) {
+    if (state.turbo || state.boostDepleted) {
+      var next = copyState(state)
+      next.turbo = false
+      next.boostDepleted = false
+      next.tickMs = calculateTickMs(next.level, false)
+      return next
+    }
+    return state
   }
 
-  if (state.turbo === isTurbo) return state
+  // Cannot activate if empty or depleted until key released
+  if (state.boost <= 0 || state.boostDepleted) {
+    return state
+  }
+
+  if (state.turbo) return state
 
   var next = copyState(state)
-  next.turbo = isTurbo
-  next.tickMs = calculateTickMs(next.level, next.turbo)
-  if (isTurbo && next.status === STATUS_PLAYING) {
+  next.turbo = true
+  next.tickMs = calculateTickMs(next.level, true)
+  if (next.status === STATUS_PLAYING) {
     next.events.push("turbo")
   }
   return next
@@ -159,6 +171,7 @@ function copyState(state) {
     pendingLane: state.pendingLane,
     turbo: state.turbo,
     boost: state.boost !== undefined ? state.boost : MAX_BOOST,
+    boostDepleted: state.boostDepleted === true,
     score: state.score,
     carsPassed: state.carsPassed,
     level: state.level,
@@ -206,7 +219,10 @@ function step(state, randomFn) {
   if (next.turbo) {
     next.boost = Math.max(0, next.boost - BOOST_DRAIN_PER_TICK)
     if (next.boost <= 0) {
+      next.boost = 0
       next.turbo = false
+      next.boostDepleted = true
+      next.tickMs = calculateTickMs(next.level, false)
       next.events.push("boost_empty")
     }
   } else {

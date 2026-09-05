@@ -196,14 +196,6 @@ Panel {
     }
   }
 
-  // Fallback watchdog timer for keyboard repeat release detection
-  Timer {
-    id: boostWatchdogTimer
-    interval: 450
-    repeat: false
-    onTriggered: root.setTurbo(false)
-  }
-
   KeyboardPanel {
     id: panel
     anchorItem: root.anchorItem
@@ -223,11 +215,7 @@ Panel {
       onMoveRequested: function(dx, dy) {
         if (dx < 0) root.steer(Game.LANE_LEFT)
         else if (dx > 0) root.steer(Game.LANE_RIGHT)
-
-        if (dy < 0) {
-          root.setTurbo(true)
-          boostWatchdogTimer.restart()
-        }
+        if (dy < 0) root.setTurbo(true)
       }
 
       onActivateRequested: {
@@ -245,10 +233,7 @@ Panel {
         var k = text.toLowerCase()
         if (k === "a" || k === "h") root.steer(Game.LANE_LEFT)
         else if (k === "d" || k === "l") root.steer(Game.LANE_RIGHT)
-        else if (k === "w" || k === "k") {
-          root.setTurbo(true)
-          boostWatchdogTimer.restart()
-        }
+        else if (k === "w" || k === "k") root.setTurbo(true)
         else if (k === "p") root.togglePause()
         else if (k === "r") root.startOrRestart()
         else if (k === "m") root.toggleSound()
@@ -256,13 +241,11 @@ Panel {
       }
 
       Keys.onReleased: function(event) {
-        // Ignore synthetic autorepeat releases from X11/Wayland keyboard drivers
         if (event.isAutoRepeat) {
           event.accepted = true
           return
         }
-        if (event.key === Qt.Key_Up || event.key === Qt.Key_W || event.text === "w" || event.text === "k") {
-          boostWatchdogTimer.stop()
+        if (event.key === Qt.Key_Up || event.key === Qt.Key_W || event.key === Qt.Key_K) {
           root.setTurbo(false)
           event.accepted = true
         }
