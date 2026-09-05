@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "omabrickrace",
+  "name": "Brick Race",
+  "version": "1.0.0",
+  "author": "Sebastian Langer",
+  "license": "MIT",
+  "description": "A faithful replica of the classic 9999-in-1 LCD Brick Game car racing game for the Omarchy bar.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "activation": "on-demand",
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Brick Race",
+    "description": "Retro LCD 9999-in-1 Brick Car Racing in an Omarchy popout panel.",
+    "category": "Games",
+    "allowMultiple": false,
+    "defaultSection": "left",
+    "defaults": {
+      "soundEnabled": true,
+      "classicLcdColors": true,
+      "bestScore": 0
+    }
+  }
+}
