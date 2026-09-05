@@ -14,7 +14,7 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Brick Race",
+    "displayName": "OmaBrickRace",
     "description": "Retro LCD 9999-in-1 Brick Car Racing in an Omarchy popout panel.",
     "category": "Games",
     "allowMultiple": false,
