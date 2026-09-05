@@ -122,14 +122,18 @@ function pause(state) {
   return state
 }
 
+function restart(state) {
+  var next = create()
+  next.status = STATUS_PLAYING
+  next.events.push("start")
+  return next
+}
+
 function start(state) {
-  if (state.status === STATUS_READY || state.status === STATUS_GAME_OVER) {
-    var next = create()
-    next.status = STATUS_PLAYING
-    next.events.push("start")
-    return next
-  }
-  return state
+  var next = create()
+  next.status = STATUS_PLAYING
+  next.events.push("start")
+  return next
 }
 
 function copyEnemy(enemy) {

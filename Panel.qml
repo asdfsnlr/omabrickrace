@@ -112,10 +112,15 @@ Panel {
     return false
   }
 
-  function startOrRestart() {
-    var next = Game.start(root.game)
+  function restart() {
+    root.setTurbo(false)
+    var next = Game.restart(root.game)
     root.handleEvents(next.events)
     root.game = next
+  }
+
+  function startOrRestart() {
+    root.restart()
   }
 
   function togglePause() {
