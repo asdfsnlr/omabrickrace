@@ -137,14 +137,18 @@ Panel {
     if (root.game.status === Game.STATUS_READY) {
       root.startOrRestart()
     }
-    root.game = Game.steer(root.game, lane)
+    var next = Game.steer(root.game, lane)
+    root.handleEvents(next.events)
+    root.game = next
   }
 
   function setTurbo(active) {
     if (root.game.status === Game.STATUS_READY && active) {
       root.startOrRestart()
     }
-    root.game = Game.setTurbo(root.game, active)
+    var next = Game.setTurbo(root.game, active)
+    root.handleEvents(next.events)
+    root.game = next
   }
 
   function persistBest(score) {
@@ -169,6 +173,7 @@ Panel {
     for (var i = 0; i < events.length; i++) {
       var ev = events[i]
       if (ev === "steer") soundSteer.play()
+      else if (ev === "turbo") soundTurbo.play()
       else if (ev === "score") soundScore.play()
       else if (ev === "crash") soundCrash.play()
       else if (ev === "start") soundStart.play()
@@ -179,6 +184,7 @@ Panel {
   onGameChanged: persistBest(game.score)
 
   SoundEffect { id: soundSteer; source: Qt.resolvedUrl("sounds/steer.wav"); volume: 0.25; muted: !root.soundEnabled }
+  SoundEffect { id: soundTurbo; source: Qt.resolvedUrl("sounds/turbo.wav"); volume: 0.35; muted: !root.soundEnabled }
   SoundEffect { id: soundScore; source: Qt.resolvedUrl("sounds/score.wav"); volume: 0.35; muted: !root.soundEnabled }
   SoundEffect { id: soundCrash; source: Qt.resolvedUrl("sounds/crash.wav"); volume: 0.45; muted: !root.soundEnabled }
   SoundEffect { id: soundStart; source: Qt.resolvedUrl("sounds/start.wav"); volume: 0.35; muted: !root.soundEnabled }
