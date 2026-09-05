@@ -29,8 +29,8 @@ var MIN_SAME_LANE_GAP = 10
 // Boost / Turbo Energy System
 var MAX_BOOST = 100
 var BOOST_DRAIN_PER_TICK = 3.0       // ~33 ticks of boost (~1.5 - 2 seconds continuous burn)
-var BOOST_PASS_CAR_BONUS = 25        // +25% boost recharge per car dodged
-var BOOST_PASSIVE_RECHARGE = 0.45    // Slow trickle recharge when cruising at normal speed
+var BOOST_PASS_CAR_BONUS = 10        // +10% boost recharge per car dodged (1 block on 10-bar meter)
+var BOOST_PASSIVE_RECHARGE = 0.08    // Very slow trickle recharge (~0.8% per second)
 
 var CAR_PIXELS = [
   [0, 1, 0],
@@ -267,7 +267,7 @@ function step(state, randomFn) {
     var newLevel = Math.min(10, 1 + Math.floor(next.carsPassed / 8))
     if (newLevel > next.level) {
       next.level = newLevel
-      next.boost = MAX_BOOST // Full refill on level up!
+      next.boost = Math.min(MAX_BOOST, next.boost + 25) // Generous +25% bonus on level up
       next.events.push("levelup")
     }
   }
