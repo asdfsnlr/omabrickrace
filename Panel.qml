@@ -661,7 +661,7 @@ Panel {
         // Keyboard hints footer mentioning both A/D and Arrow keys in English
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
-          text: "A / D or ← / → : Lane  ·  W / ↑ : Boost  ·  Space : Pause"
+          text: "A / D or ← / → : Lane  ·  W / ↑ : Boost  ·  Space : Start / Pause"
           color: Color.muted
           font.family: root.fontFamily
           font.pixelSize: Style.font.caption
