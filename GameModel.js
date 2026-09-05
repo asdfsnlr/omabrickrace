@@ -22,6 +22,12 @@ var MIN_TICK_MS = 55
 var TICK_LEVEL_STEP = 9
 var TURBO_FACTOR = 0.44
 
+// Guaranteed minimum row gap between consecutive cars in DIFFERENT lanes.
+// A value of 12 ensures that when Car A clears row 19, Car B is still at row 8,
+// giving the player at least 5 clear ticks (300ms+ even at max speed) to switch lanes safely.
+var MIN_OPPOSITE_LANE_GAP = 12
+var MIN_SAME_LANE_GAP = 10
+
 var CAR_PIXELS = [
   [0, 1, 0],
   [1, 1, 1],
@@ -42,9 +48,10 @@ function create(randomFn) {
     level: 1,
     roadOffset: 0,
     enemies: [],
-    spawnCooldown: 6,
+    spawnCooldown: 8,
     nextEnemyId: 1,
     crashTicks: 0,
+    consecutiveSameLane: 0,
     events: [],
     tickMs: BASE_TICK_MS
   }
@@ -144,6 +151,7 @@ function copyState(state) {
     spawnCooldown: state.spawnCooldown,
     nextEnemyId: state.nextEnemyId,
     crashTicks: state.crashTicks,
+    consecutiveSameLane: state.consecutiveSameLane || 0,
     events: [],
     tickMs: state.tickMs
   }
@@ -238,36 +246,46 @@ function step(state, randomFn) {
     next.score += 1
   }
 
-  // Enemy spawning logic
+  // Enemy spawning logic with GUARANTEED safe lane switching at all speeds
   next.spawnCooldown--
   if (next.spawnCooldown <= 0) {
     var randVal = randomFn ? Number(randomFn()) : Math.random()
     if (!isFinite(randVal)) randVal = 0
 
-    var spawnLane = randVal < 0.5 ? LANE_LEFT : LANE_RIGHT
-    if (next.enemies.length > 0) {
-      var last = next.enemies[next.enemies.length - 1]
-      if (last.y < 3) {
-        next.spawnCooldown = 2
-      } else {
-        next.enemies.push({
-          id: next.nextEnemyId++,
-          lane: spawnLane,
-          y: -CAR_HEIGHT,
-          passed: false
-        })
-        var minGap = Math.max(7, 12 - Math.floor(next.level / 2))
-        var extraGap = Math.floor((randomFn ? Number(randomFn()) : Math.random()) * 5)
-        next.spawnCooldown = minGap + extraGap
-      }
+    var last = next.enemies.length > 0 ? next.enemies[next.enemies.length - 1] : null
+
+    // Determine candidate lane
+    var candidateLane = randVal < 0.5 ? LANE_LEFT : LANE_RIGHT
+
+    // Never spawn more than 2 consecutive cars in the same lane to keep race exciting
+    if (last && next.consecutiveSameLane >= 2) {
+      candidateLane = (last.lane === LANE_LEFT) ? LANE_RIGHT : LANE_LEFT
+    }
+
+    // Calculate required distance based on whether it is same lane or opposite lane
+    var isOpposite = last && (last.lane !== candidateLane)
+    var requiredGap = isOpposite ? MIN_OPPOSITE_LANE_GAP : MIN_SAME_LANE_GAP
+
+    // If the last car hasn't moved down far enough to guarantee the safe window, defer spawn!
+    if (last && (last.y + CAR_HEIGHT < requiredGap)) {
+      next.spawnCooldown = 1
     } else {
       next.enemies.push({
         id: next.nextEnemyId++,
-        lane: spawnLane,
+        lane: candidateLane,
         y: -CAR_HEIGHT,
         passed: false
       })
-      next.spawnCooldown = Math.max(7, 12 - Math.floor(next.level / 2))
+
+      if (last && last.lane === candidateLane) {
+        next.consecutiveSameLane = (next.consecutiveSameLane || 0) + 1
+      } else {
+        next.consecutiveSameLane = 1
+      }
+
+      // Next cooldown guarantees minimum gap + small natural variation
+      var extraVariance = Math.floor((randomFn ? Number(randomFn()) : Math.random()) * 4)
+      next.spawnCooldown = requiredGap + extraVariance
     }
   }
 

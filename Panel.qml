@@ -155,8 +155,9 @@ Panel {
     bar: root.bar
     open: root.opened
     centerOnBar: true
+    gap: Math.max(Style.gapsOut, Math.round((panel.screenH - panel.barH - panel.contentHeight) / 2))
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(340))
+    contentWidth: panel.fittedContentWidth(Style.space(400))
     contentHeight: panel.fittedContentHeight(contentColumn.implicitHeight)
 
     PanelKeyCatcher {
@@ -207,17 +208,17 @@ Panel {
       Column {
         id: contentColumn
         width: parent.width
-        spacing: Style.space(10)
+        spacing: Style.space(12)
 
         // Header with title and controls
         Item {
           width: parent.width
-          height: Style.space(32)
+          height: Style.space(34)
 
           Row {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Style.space(6)
+            spacing: Style.space(8)
 
             Text {
               text: "󰄛"
@@ -248,8 +249,8 @@ Panel {
             spacing: Style.space(4)
 
             Button {
-              width: Style.space(28)
-              height: Style.space(28)
+              width: Style.space(30)
+              height: Style.space(30)
               iconText: root.soundEnabled ? "󰕾" : "󰝟"
               iconSize: Style.font.icon
               tooltipText: root.soundEnabled ? "Mute sound [M]" : "Unmute sound [M]"
@@ -258,8 +259,8 @@ Panel {
             }
 
             Button {
-              width: Style.space(28)
-              height: Style.space(28)
+              width: Style.space(30)
+              height: Style.space(30)
               iconText: "󰏘"
               iconSize: Style.font.icon
               tooltipText: root.classicLcdColors ? "Theme Colors [C]" : "Classic LCD [C]"
@@ -268,8 +269,8 @@ Panel {
             }
 
             Button {
-              width: Style.space(28)
-              height: Style.space(28)
+              width: Style.space(30)
+              height: Style.space(30)
               iconText: root.game.status === Game.STATUS_PLAYING ? "󰏤" : "󰐊"
               iconSize: Style.font.icon
               tooltipText: root.game.status === Game.STATUS_PLAYING ? "Pause [P]" : "Play [Space]"
@@ -278,8 +279,8 @@ Panel {
             }
 
             Button {
-              width: Style.space(28)
-              height: Style.space(28)
+              width: Style.space(30)
+              height: Style.space(30)
               iconText: "󰑐"
               iconSize: Style.font.icon
               tooltipText: "Restart [R]"
@@ -293,24 +294,24 @@ Panel {
         BorderSurface {
           id: lcdBezel
           width: parent.width
-          height: Style.space(294)
+          height: Style.space(358)
           color: root.classicLcdColors ? "#8b9c71" : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.035)
           borderSpec: Border.surfaceSpec("popups", "border", root.lcdScreenBorder, Math.max(1, Style.normalBorderWidth))
           radius: Style.cornerRadius
 
           Row {
             anchors.centerIn: parent
-            spacing: Style.space(12)
+            spacing: Style.space(16)
 
-            // 10x20 LCD Track Screen
+            // 10x20 LCD Track Screen (Scaled up for comfortable gameplay)
             Rectangle {
               id: screenArea
-              width: Style.space(140)
-              height: Style.space(280)
+              width: Style.space(170)
+              height: Style.space(340)
               color: root.lcdScreenBg
               border.width: 1
               border.color: root.lcdScreenBorder
-              radius: Style.space(3)
+              radius: Style.space(4)
               clip: true
 
               readonly property int cellWidth: Math.floor(width / Game.COLS)
@@ -364,8 +365,8 @@ Panel {
               Rectangle {
                 anchors.centerIn: parent
                 visible: root.game.status !== Game.STATUS_PLAYING && root.game.status !== Game.STATUS_CRASH
-                width: overlayText.implicitWidth + Style.space(20)
-                height: overlayText.implicitHeight + Style.space(14)
+                width: overlayText.implicitWidth + Style.space(24)
+                height: overlayText.implicitHeight + Style.space(16)
                 radius: Style.space(4)
                 color: root.classicLcdColors ? "#92a477" : Color.popups.background
                 border.width: 1
@@ -400,14 +401,14 @@ Panel {
 
             // Side HUD (Score, Hi-Score, Speed, Level, Indicators)
             Column {
-              width: Style.space(126)
-              height: Style.space(280)
-              spacing: Style.space(8)
+              width: Style.space(146)
+              height: Style.space(340)
+              spacing: Style.space(10)
 
               // SCORE Box
               Column {
                 width: parent.width
-                spacing: Style.space(1)
+                spacing: Style.space(2)
 
                 Text {
                   text: "SCORE"
@@ -429,7 +430,7 @@ Panel {
               // HI-SCORE Box
               Column {
                 width: parent.width
-                spacing: Style.space(1)
+                spacing: Style.space(2)
 
                 Text {
                   text: "HI-SCORE"
@@ -448,13 +449,13 @@ Panel {
                 }
               }
 
-              // SPEED & LEVEL Row
+              // SPEED & CARS Row
               Row {
                 width: parent.width
-                spacing: Style.space(12)
+                spacing: Style.space(16)
 
                 Column {
-                  spacing: Style.space(1)
+                  spacing: Style.space(2)
                   Text {
                     text: "SPEED"
                     color: root.lcdTextMuted
@@ -472,7 +473,7 @@ Panel {
                 }
 
                 Column {
-                  spacing: Style.space(1)
+                  spacing: Style.space(2)
                   Text {
                     text: "CARS"
                     color: root.lcdTextMuted
@@ -490,18 +491,18 @@ Panel {
                 }
               }
 
-              Item { height: Style.space(6); width: 1 }
+              Item { height: Style.space(8); width: 1 }
 
               // TURBO Badge Indicator
               Rectangle {
                 width: parent.width - Style.space(8)
-                height: Style.space(24)
-                radius: Style.space(3)
+                height: Style.space(28)
+                radius: Style.space(4)
                 color: root.game.turbo ? (root.classicLcdColors ? "#162010" : Color.accent) : (root.classicLcdColors ? "#84956a" : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.08))
 
                 Row {
                   anchors.centerIn: parent
-                  spacing: Style.space(4)
+                  spacing: Style.space(6)
 
                   Text {
                     text: "󰓅"
@@ -511,7 +512,7 @@ Panel {
                   }
 
                   Text {
-                    text: "TURBO"
+                    text: "BOOST"
                     color: root.game.turbo ? (root.classicLcdColors ? "#92a477" : Color.background) : root.lcdTextMuted
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
@@ -523,13 +524,13 @@ Panel {
               // Mini Pixel Car Status Indicator
               Item {
                 width: parent.width
-                height: Style.space(40)
+                height: Style.space(50)
 
                 Grid {
                   anchors.centerIn: parent
                   columns: 3
                   rows: 4
-                  spacing: 1
+                  spacing: 2
 
                   Repeater {
                     model: [
@@ -540,8 +541,8 @@ Panel {
                     ]
                     Rectangle {
                       required property int modelData
-                      width: Style.space(5)
-                      height: Style.space(5)
+                      width: Style.space(6)
+                      height: Style.space(6)
                       radius: 0.5
                       color: modelData === 1 ? root.lcdLitPixel : root.lcdGhostPixel
                     }
@@ -555,16 +556,16 @@ Panel {
         // Bottom Touch / Mouse arcade controls
         Item {
           width: parent.width
-          height: Style.space(38)
+          height: Style.space(42)
 
           Row {
             anchors.centerIn: parent
-            spacing: Style.space(8)
+            spacing: Style.space(10)
 
             // Left Lane Button
             Rectangle {
-              width: Style.space(68)
-              height: Style.space(34)
+              width: Style.space(84)
+              height: Style.space(38)
               radius: Style.cornerRadius
               color: root.game.playerLane === Game.LANE_LEFT ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12) : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.05)
               border.width: 1
@@ -589,11 +590,11 @@ Panel {
               }
             }
 
-            // TURBO Button (press & hold or click)
+            // BOOST Button (press & hold or click)
             Rectangle {
               id: turboButton
-              width: Style.space(82)
-              height: Style.space(34)
+              width: Style.space(100)
+              height: Style.space(38)
               radius: Style.cornerRadius
               color: root.game.turbo ? Color.accent : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.05)
               border.width: 1
@@ -601,7 +602,7 @@ Panel {
 
               Row {
                 anchors.centerIn: parent
-                spacing: Style.space(3)
+                spacing: Style.space(4)
                 Text {
                   text: "󰓅"
                   color: root.game.turbo ? Color.background : root.foreground
@@ -635,8 +636,8 @@ Panel {
 
             // Right Lane Button
             Rectangle {
-              width: Style.space(68)
-              height: Style.space(34)
+              width: Style.space(84)
+              height: Style.space(38)
               radius: Style.cornerRadius
               color: root.game.playerLane === Game.LANE_RIGHT ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12) : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.05)
               border.width: 1
@@ -663,10 +664,10 @@ Panel {
           }
         }
 
-        // Keyboard hints footer
+        // Keyboard hints footer in English
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
-          text: "← / → : Carril  ·  ↑ / W : Turbo  ·  Espacio : Pausa"
+          text: "← / → : Lane  ·  ↑ / W : Boost  ·  Space : Pause"
           color: Color.muted
           font.family: root.fontFamily
           font.pixelSize: Style.font.caption
