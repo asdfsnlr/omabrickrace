@@ -96,6 +96,7 @@ Panel {
   }
 
   function close() {
+    root.setTurbo(false)
     root.game = Game.pause(root.game)
     root.controller.hide()
   }
@@ -190,9 +191,10 @@ Panel {
     }
   }
 
+  // Fallback watchdog timer for keyboard repeat release detection
   Timer {
-    id: turboReleaseTimer
-    interval: 250
+    id: boostWatchdogTimer
+    interval: 450
     repeat: false
     onTriggered: root.setTurbo(false)
   }
@@ -219,7 +221,7 @@ Panel {
 
         if (dy < 0) {
           root.setTurbo(true)
-          turboReleaseTimer.restart()
+          boostWatchdogTimer.restart()
         }
       }
 
@@ -240,7 +242,7 @@ Panel {
         else if (k === "d" || k === "l") root.steer(Game.LANE_RIGHT)
         else if (k === "w" || k === "k") {
           root.setTurbo(true)
-          turboReleaseTimer.restart()
+          boostWatchdogTimer.restart()
         }
         else if (k === "p") root.togglePause()
         else if (k === "r") root.startOrRestart()
@@ -249,8 +251,15 @@ Panel {
       }
 
       Keys.onReleased: function(event) {
-        if (event.key === Qt.Key_Up || event.key === Qt.Key_W) {
+        // Ignore synthetic autorepeat releases from X11/Wayland keyboard drivers
+        if (event.isAutoRepeat) {
+          event.accepted = true
+          return
+        }
+        if (event.key === Qt.Key_Up || event.key === Qt.Key_W || event.text === "w" || event.text === "k") {
+          boostWatchdogTimer.stop()
           root.setTurbo(false)
+          event.accepted = true
         }
       }
 
@@ -259,7 +268,7 @@ Panel {
         width: parent.width
         spacing: Style.space(12)
 
-        // Header with title and controls
+        // Header with pixel car icon, OmaBrickRace title, and action buttons
         Item {
           width: parent.width
           height: Style.space(34)
@@ -267,28 +276,39 @@ Panel {
           Row {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Style.space(8)
+            spacing: Style.space(10)
 
-            Text {
-              text: "󰄛"
-              color: Color.accent
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.icon
+            // Matching pixel car glyph from the status bar widget
+            Grid {
+              anchors.verticalCenter: parent.verticalCenter
+              columns: 3
+              rows: 4
+              spacing: 1
+
+              Repeater {
+                model: [
+                  0, 1, 0,
+                  1, 1, 1,
+                  0, 1, 0,
+                  1, 1, 1
+                ]
+                Rectangle {
+                  required property int modelData
+                  width: Style.space(4)
+                  height: Style.space(4)
+                  radius: 0.5
+                  color: modelData === 1 ? Color.accent : "transparent"
+                }
+              }
             }
 
             Text {
-              text: "BRICK RACE"
+              anchors.verticalCenter: parent.verticalCenter
+              text: "OmaBrickRace"
               color: root.foreground
               font.family: root.fontFamily
-              font.pixelSize: Style.font.body
+              font.pixelSize: Style.font.bodyLarge
               font.bold: true
-            }
-
-            Text {
-              text: "9999-IN-1"
-              color: Color.muted
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.bodySmall
             }
           }
 
@@ -448,7 +468,7 @@ Panel {
               }
             }
 
-            // Side HUD (Score, Hi-Score, Speed, Level, Indicators)
+            // Side HUD (Score, Hi-Score, Speed, Cars, Segmented Boost Gauge)
             Column {
               width: Style.space(146)
               height: Style.space(340)
@@ -540,32 +560,62 @@ Panel {
                 }
               }
 
-              Item { height: Style.space(8); width: 1 }
+              Item { height: Style.space(4); width: 1 }
 
-              // TURBO Badge Indicator
-              Rectangle {
+              // Segmented LCD BOOST / NITRO Gauge
+              Column {
                 width: parent.width - Style.space(8)
-                height: Style.space(28)
-                radius: Style.space(4)
-                color: root.game.turbo ? (root.classicLcdColors ? "#162010" : Color.accent) : (root.classicLcdColors ? "#84956a" : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.08))
+                spacing: Style.space(4)
 
                 Row {
-                  anchors.centerIn: parent
-                  spacing: Style.space(6)
-
-                  Text {
-                    text: "󰓅"
-                    color: root.game.turbo ? (root.classicLcdColors ? "#92a477" : Color.background) : root.lcdTextMuted
-                    font.family: root.fontFamily
-                    font.pixelSize: Style.font.bodySmall
-                  }
-
+                  width: parent.width
+                  Item { width: 1; height: 1 }
                   Text {
                     text: "BOOST"
-                    color: root.game.turbo ? (root.classicLcdColors ? "#92a477" : Color.background) : root.lcdTextMuted
+                    color: root.game.turbo ? (root.classicLcdColors ? "#162010" : Color.accent) : root.lcdTextMuted
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
                     font.bold: true
+                  }
+                  Item { width: Style.space(4); height: 1 }
+                  Text {
+                    text: Math.round(root.game.boost) + "%"
+                    color: root.game.boost > 0 ? root.lcdTextDark : Color.muted
+                    font.family: "monospace"
+                    font.pixelSize: Style.font.caption
+                    font.bold: true
+                  }
+                }
+
+                // 10-bar segmented LCD meter
+                Row {
+                  spacing: Style.space(2)
+
+                  Repeater {
+                    model: 10
+
+                    Rectangle {
+                      required property int index
+                      width: Style.space(11)
+                      height: Style.space(10)
+                      radius: 0.5
+                      readonly property bool active: (index + 1) * 10 <= root.game.boost
+                      color: active
+                        ? (root.game.turbo
+                           ? (root.classicLcdColors ? "#162010" : Color.accent)
+                           : (root.classicLcdColors ? "#293818" : root.foreground))
+                        : root.lcdGhostPixel
+
+                      Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        color: "transparent"
+                        border.width: 1
+                        border.color: parent.active
+                          ? (root.classicLcdColors ? "#3b4f23" : Qt.rgba(1, 1, 1, 0.2))
+                          : "transparent"
+                      }
+                    }
                   }
                 }
               }
@@ -573,7 +623,7 @@ Panel {
               // Mini Pixel Car Status Indicator
               Item {
                 width: parent.width
-                height: Style.space(50)
+                height: Style.space(46)
 
                 Grid {
                   anchors.centerIn: parent
@@ -642,9 +692,10 @@ Panel {
             // BOOST Button (press & hold or click)
             Rectangle {
               id: turboButton
-              width: Style.space(100)
+              width: Style.space(104)
               height: Style.space(38)
               radius: Style.cornerRadius
+              opacity: root.game.boost > 0 ? 1.0 : 0.5
               color: root.game.turbo ? Color.accent : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.05)
               border.width: 1
               border.color: root.game.turbo ? Color.accent : Color.popups.border
@@ -659,7 +710,7 @@ Panel {
                   font.pixelSize: Style.font.bodySmall
                 }
                 Text {
-                  text: "BOOST"
+                  text: "BOOST " + Math.round(root.game.boost) + "%"
                   color: root.game.turbo ? Color.background : root.foreground
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.caption
@@ -669,7 +720,7 @@ Panel {
 
               MouseArea {
                 anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
+                cursorShape: root.game.boost > 0 ? Qt.PointingHandCursor : Qt.ForbiddenCursor
                 onPressed: {
                   keyCatcher.forceActiveFocus()
                   root.setTurbo(true)
@@ -713,10 +764,10 @@ Panel {
           }
         }
 
-        // Keyboard hints footer in English
+        // Keyboard hints footer mentioning both A/D and Arrow keys in English
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
-          text: "← / → : Lane  ·  ↑ / W : Boost  ·  Space : Pause"
+          text: "A / D or ← / → : Lane  ·  W / ↑ : Boost  ·  Space : Pause"
           color: Color.muted
           font.family: root.fontFamily
           font.pixelSize: Style.font.caption

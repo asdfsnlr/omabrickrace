@@ -23,10 +23,14 @@ var TICK_LEVEL_STEP = 9
 var TURBO_FACTOR = 0.44
 
 // Guaranteed minimum row gap between consecutive cars in DIFFERENT lanes.
-// A value of 12 ensures that when Car A clears row 19, Car B is still at row 8,
-// giving the player at least 5 clear ticks (300ms+ even at max speed) to switch lanes safely.
 var MIN_OPPOSITE_LANE_GAP = 12
 var MIN_SAME_LANE_GAP = 10
+
+// Boost / Turbo Energy System
+var MAX_BOOST = 100
+var BOOST_DRAIN_PER_TICK = 3.0       // ~33 ticks of boost (~1.5 - 2 seconds continuous burn)
+var BOOST_PASS_CAR_BONUS = 25        // +25% boost recharge per car dodged
+var BOOST_PASSIVE_RECHARGE = 0.45    // Slow trickle recharge when cruising at normal speed
 
 var CAR_PIXELS = [
   [0, 1, 0],
@@ -43,6 +47,7 @@ function create(randomFn) {
     playerLane: LANE_LEFT,
     pendingLane: null,
     turbo: false,
+    boost: MAX_BOOST,
     score: 0,
     carsPassed: 0,
     level: 1,
@@ -75,6 +80,12 @@ function steer(state, targetLane) {
 
 function setTurbo(state, active) {
   var isTurbo = active === true
+
+  // Cannot activate boost if tank is empty
+  if (isTurbo && state.boost <= 0) {
+    isTurbo = false
+  }
+
   if (state.turbo === isTurbo) return state
 
   var next = copyState(state)
@@ -143,6 +154,7 @@ function copyState(state) {
     playerLane: state.playerLane,
     pendingLane: state.pendingLane,
     turbo: state.turbo,
+    boost: state.boost !== undefined ? state.boost : MAX_BOOST,
     score: state.score,
     carsPassed: state.carsPassed,
     level: state.level,
@@ -186,6 +198,17 @@ function step(state, randomFn) {
     return next
   }
 
+  // Handle Boost Consumption / Passive Recharge
+  if (next.turbo) {
+    next.boost = Math.max(0, next.boost - BOOST_DRAIN_PER_TICK)
+    if (next.boost <= 0) {
+      next.turbo = false
+      next.events.push("boost_empty")
+    }
+  } else {
+    next.boost = Math.min(MAX_BOOST, next.boost + BOOST_PASSIVE_RECHARGE)
+  }
+
   // Apply lane steering
   if (next.pendingLane !== null) {
     if (next.pendingLane !== next.playerLane) {
@@ -227,16 +250,20 @@ function step(state, randomFn) {
     return next
   }
 
-  // Update score & level progression
+  // Update score, level progression & boost recharge rewards
   if (carsPassedThisStep > 0) {
     var passPoints = carsPassedThisStep * (next.turbo ? 20 : 10)
     next.score += passPoints
     next.carsPassed += carsPassedThisStep
     next.events.push("score")
 
+    // Bonus boost refill when dodging cars!
+    next.boost = Math.min(MAX_BOOST, next.boost + carsPassedThisStep * BOOST_PASS_CAR_BONUS)
+
     var newLevel = Math.min(10, 1 + Math.floor(next.carsPassed / 8))
     if (newLevel > next.level) {
       next.level = newLevel
+      next.boost = MAX_BOOST // Full refill on level up!
       next.events.push("levelup")
     }
   }
@@ -254,19 +281,16 @@ function step(state, randomFn) {
 
     var last = next.enemies.length > 0 ? next.enemies[next.enemies.length - 1] : null
 
-    // Determine candidate lane
     var candidateLane = randVal < 0.5 ? LANE_LEFT : LANE_RIGHT
 
-    // Never spawn more than 2 consecutive cars in the same lane to keep race exciting
+    // Avoid 3 in a row on the same lane
     if (last && next.consecutiveSameLane >= 2) {
       candidateLane = (last.lane === LANE_LEFT) ? LANE_RIGHT : LANE_LEFT
     }
 
-    // Calculate required distance based on whether it is same lane or opposite lane
     var isOpposite = last && (last.lane !== candidateLane)
     var requiredGap = isOpposite ? MIN_OPPOSITE_LANE_GAP : MIN_SAME_LANE_GAP
 
-    // If the last car hasn't moved down far enough to guarantee the safe window, defer spawn!
     if (last && (last.y + CAR_HEIGHT < requiredGap)) {
       next.spawnCooldown = 1
     } else {
@@ -283,7 +307,6 @@ function step(state, randomFn) {
         next.consecutiveSameLane = 1
       }
 
-      // Next cooldown guarantees minimum gap + small natural variation
       var extraVariance = Math.floor((randomFn ? Number(randomFn()) : Math.random()) * 4)
       next.spawnCooldown = requiredGap + extraVariance
     }
