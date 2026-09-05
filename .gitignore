@@ -1,3 +1,5 @@
 *.tmp
 *.bak
 __pycache__/
+.idea/
+.junie/

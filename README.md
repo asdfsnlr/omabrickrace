@@ -1,4 +1,4 @@
-# OmaBrickRace — 9999-in-1 LCD Brick Racing Game for Omarchy
+# OmaBrickRace — LCD Brick Racing Game for Omarchy
 
 A faithful retro LCD brick racing game and status bar widget for Omarchy, powered by Quickshell, replicating the iconic handheld consoles of the 90s.
 
