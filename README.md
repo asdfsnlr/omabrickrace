@@ -2,7 +2,9 @@
 
 A faithful retro LCD brick racing game and status bar widget for Omarchy, powered by Quickshell, replicating the iconic handheld consoles of the 90s.
 
-> **Disclaimer:** *This project is an unofficial community plugin for Omarchy. It is an independent homage to classic handheld LCD brick games (such as the E-9999 / Brick Game consoles). All product names, trademarks, and references are used solely for descriptive, historical, and interoperability purposes.*
+> **Disclaimer:** This project is an independent, fan-made clone created from scratch for educational and entertainment purposes.
+> - It is not affiliated with, endorsed by, or associated with any original manufacturers of vintage handheld "Brick Game" or "9999-in-1" consoles.
+> - All game mechanics are written entirely from scratch and do not use any copyrighted source code, proprietary ROMs, or trademarked assets.
 
 <p align="center">
   <img src="preview.png" alt="OmaBrickRace Preview" />

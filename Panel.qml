@@ -116,6 +116,7 @@ Panel {
     root.setTurbo(false)
     var next = Game.restart(root.game)
     root.handleEvents(next.events)
+    next.events = []
     root.game = next
   }
 
@@ -130,6 +131,7 @@ Panel {
     }
     var next = Game.togglePause(root.game)
     root.handleEvents(next.events)
+    next.events = []
     root.game = next
   }
 
@@ -139,6 +141,7 @@ Panel {
     }
     var next = Game.steer(root.game, lane)
     root.handleEvents(next.events)
+    next.events = []
     root.game = next
   }
 
@@ -148,6 +151,7 @@ Panel {
     }
     var next = Game.setTurbo(root.game, active)
     root.handleEvents(next.events)
+    next.events = []
     root.game = next
   }
 
@@ -198,6 +202,7 @@ Panel {
     onTriggered: {
       var next = Game.step(root.game, Math.random)
       root.handleEvents(next.events)
+      next.events = []
       root.game = next
     }
   }
@@ -221,7 +226,7 @@ Panel {
       onMoveRequested: function(dx, dy) {
         if (dx < 0) root.steer(Game.LANE_LEFT)
         else if (dx > 0) root.steer(Game.LANE_RIGHT)
-        if (dy < 0) root.setTurbo(true)
+        if (dy < 0 && !root.game.turbo) root.setTurbo(true)
       }
 
       onActivateRequested: {
@@ -239,7 +244,9 @@ Panel {
         var k = text.toLowerCase()
         if (k === "a" || k === "h") root.steer(Game.LANE_LEFT)
         else if (k === "d" || k === "l") root.steer(Game.LANE_RIGHT)
-        else if (k === "w" || k === "k") root.setTurbo(true)
+        else if (k === "w" || k === "k") {
+          if (!root.game.turbo) root.setTurbo(true)
+        }
         else if (k === "p") root.togglePause()
         else if (k === "r") root.startOrRestart()
         else if (k === "m") root.toggleSound()

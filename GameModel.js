@@ -70,9 +70,17 @@ function calculateTickMs(level, turbo) {
 }
 
 function steer(state, targetLane) {
-  if (state.status !== STATUS_PLAYING && state.status !== STATUS_READY) return state
+  if (state.status !== STATUS_PLAYING && state.status !== STATUS_READY) {
+    var clean = copyState(state)
+    clean.events = []
+    return clean
+  }
   var lane = targetLane === LANE_RIGHT ? LANE_RIGHT : LANE_LEFT
-  if (state.playerLane === lane && !state.pendingLane) return state
+  if (state.playerLane === lane && !state.pendingLane) {
+    var clean = copyState(state)
+    clean.events = []
+    return clean
+  }
 
   var next = copyState(state)
   next.pendingLane = lane
@@ -90,15 +98,17 @@ function setTurbo(state, active) {
       next.tickMs = calculateTickMs(next.level, false)
       return next
     }
-    return state
+    var clean = copyState(state)
+    clean.events = []
+    return clean
   }
 
   // Cannot activate if empty or depleted until key released
-  if (state.boost <= 0 || state.boostDepleted) {
-    return state
+  if (state.boost <= 0 || state.boostDepleted || state.turbo) {
+    var clean = copyState(state)
+    clean.events = []
+    return clean
   }
-
-  if (state.turbo) return state
 
   var next = copyState(state)
   next.turbo = true
