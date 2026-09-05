@@ -216,7 +216,7 @@ Panel {
     centerOnBar: true
     gap: Math.max(Style.gapsOut, Math.round((panel.screenH - panel.barH - panel.contentHeight) / 2))
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(400))
+    contentWidth: panel.fittedContentWidth(Style.space(436))
     contentHeight: panel.fittedContentHeight(contentColumn.implicitHeight)
 
     PanelKeyCatcher {
@@ -654,13 +654,51 @@ Panel {
         }
 
 
-        // Keyboard hints footer mentioning both A/D and Arrow keys in English
-        Text {
-          anchors.horizontalCenter: parent.horizontalCenter
-          text: "A / D or ← / → : Lane  ·  W / ↑ : Boost  ·  Space : Start / Pause"
-          color: Color.muted
-          font.family: root.fontFamily
-          font.pixelSize: Style.font.caption
+        // Keyboard hints footer with comfortable side margins
+        Item {
+          width: parent.width
+          height: footerRow.implicitHeight + Style.space(4)
+
+          Row {
+            id: footerRow
+            anchors.centerIn: parent
+            spacing: Style.space(8)
+
+            Text {
+              text: "A / D or ← / → : Lane"
+              color: Color.muted
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+            }
+
+            Text {
+              text: "·"
+              color: Color.subtle
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+            }
+
+            Text {
+              text: "W / ↑ : Boost"
+              color: Color.muted
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+            }
+
+            Text {
+              text: "·"
+              color: Color.subtle
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+            }
+
+            Text {
+              text: "Space : Start / Pause"
+              color: Color.muted
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+            }
+          }
         }
       }
     }
