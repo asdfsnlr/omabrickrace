@@ -68,6 +68,9 @@ BarWidget {
         rows: 4
         spacing: 1
 
+        // Proportional, compact icon size that matches standard bar icons (~11x15px)
+        readonly property int blockSize: Math.max(2, Math.round(Style.bar.iconSlot * 0.105))
+
         Repeater {
           model: [
             0, 1, 0,
@@ -77,8 +80,8 @@ BarWidget {
           ]
           Rectangle {
             required property int modelData
-            width: Math.max(2, Math.round(Style.bar.iconSlot * 0.16))
-            height: width
+            width: parent.blockSize
+            height: parent.blockSize
             radius: Style.cornerRadius > 0 ? 0.5 : 0
             color: modelData === 1 ? button.foreground : "transparent"
           }

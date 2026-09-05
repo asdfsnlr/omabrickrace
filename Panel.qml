@@ -1,6 +1,7 @@
 import QtQuick
 import QtMultimedia
 import Quickshell
+import Quickshell.Io
 import qs.Commons
 import qs.Ui
 import "GameModel.js" as Game
@@ -17,6 +18,7 @@ Panel {
   readonly property color foreground: bar ? bar.foreground : Color.foreground
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
+  // Settings properties with initial fallback to shell.json injected settings
   property bool soundEnabled: settings && settings.soundEnabled !== undefined ? settings.soundEnabled === true : true
   property bool classicLcdColors: settings && settings.classicLcdColors !== undefined ? settings.classicLcdColors === true : true
 
@@ -31,6 +33,63 @@ Panel {
   readonly property color lcdGhostPixel: root.classicLcdColors ? "#84956a" : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.05)
   readonly property color lcdTextDark: root.classicLcdColors ? "#162010" : root.foreground
   readonly property color lcdTextMuted: root.classicLcdColors ? "#586944" : Color.muted
+
+  // Persistence directory: ~/.local/state/omabrickrace/settings.json
+  readonly property string stateHome: {
+    var xdg = Quickshell.env("XDG_STATE_HOME")
+    return xdg && xdg.length > 0 ? xdg : Quickshell.env("HOME") + "/.local/state"
+  }
+  readonly property string stateDir: stateHome + "/omabrickrace"
+
+  Process {
+    command: ["mkdir", "-p", root.stateDir]
+    running: true
+  }
+
+  FileView {
+    id: settingsFile
+    path: root.stateDir + "/settings.json"
+    printErrors: false
+    watchChanges: false
+    onLoaded: {
+      try {
+        var val = JSON.parse(text())
+        if (val) {
+          if (val.classicLcdColors !== undefined) root.classicLcdColors = val.classicLcdColors === true
+          if (val.soundEnabled !== undefined) root.soundEnabled = val.soundEnabled === true
+          if (val.bestScore !== undefined) {
+            var scoreVal = Math.max(0, Math.floor(Number(val.bestScore) || 0))
+            if (scoreVal > root.sessionBest) root.sessionBest = scoreVal
+          }
+        }
+      } catch (e) {
+        // Invalid or empty settings file fallback
+      }
+    }
+  }
+
+  function saveSettings() {
+    var data = {
+      version: 1,
+      soundEnabled: root.soundEnabled,
+      classicLcdColors: root.classicLcdColors,
+      bestScore: root.bestScore
+    }
+    settingsFile.setText(JSON.stringify(data, null, 2) + "\n")
+
+    // Also persist inline to shell.json
+    var entry = {
+      id: root.moduleName,
+      soundEnabled: root.soundEnabled,
+      classicLcdColors: root.classicLcdColors,
+      bestScore: root.bestScore
+    }
+    root.settings = entry
+    if (root.hostWidget && "settings" in root.hostWidget) root.hostWidget.settings = entry
+    if (root.bar && root.bar.shell && typeof root.bar.shell.updateEntryInline === "function") {
+      root.bar.shell.updateEntryInline(root.moduleName, entry)
+    }
+  }
 
   function open() {
     root.controller.show()
@@ -82,31 +141,21 @@ Panel {
     root.game = Game.setTurbo(root.game, active)
   }
 
-  function persistSetting(key, val) {
-    var entry = { id: root.moduleName }
-    for (var k in root.settings) if (k !== "id") entry[k] = root.settings[k]
-    entry[key] = val
-    root.settings = entry
-    if (root.hostWidget && "settings" in root.hostWidget) root.hostWidget.settings = entry
-    if (root.bar && root.bar.shell && typeof root.bar.shell.updateEntryInline === "function")
-      root.bar.shell.updateEntryInline(root.moduleName, entry)
-  }
-
   function persistBest(score) {
     var value = Math.max(0, Math.floor(Number(score) || 0))
     if (value <= root.bestScore) return
     root.sessionBest = value
-    persistSetting("bestScore", value)
+    root.saveSettings()
   }
 
   function toggleSound() {
     root.soundEnabled = !root.soundEnabled
-    persistSetting("soundEnabled", root.soundEnabled)
+    root.saveSettings()
   }
 
   function toggleLcdTheme() {
     root.classicLcdColors = !root.classicLcdColors
-    persistSetting("classicLcdColors", root.classicLcdColors)
+    root.saveSettings()
   }
 
   function handleEvents(events) {
