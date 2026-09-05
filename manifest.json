@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "omabrickrace",
+  "id": "asdfsnlr.omabrickrace",
   "name": "Brick Race",
   "version": "1.0.0",
-  "author": "Sebastian Langer",
+  "author": "asdfsnlr",
   "license": "MIT",
   "description": "A faithful replica of the classic 9999-in-1 LCD Brick Game car racing game for the Omarchy bar.",
   "kinds": [
